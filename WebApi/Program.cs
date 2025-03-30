@@ -6,6 +6,7 @@ using ApplicationCore.Models.QuizAggregate;
 using Infrastructure.Memory.Generators;
 using Infrastructure.Memory.Repositories;
 using Web;
+using WebApi.Mapper;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,7 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+builder.Services.AddAutoMapper(typeof(AutoMapperProfiles));
 builder.Services.AddTransient<IGenericGenerator<int>, IntGenerator>();
 builder.Services.AddSingleton<IGenericRepository<Quiz, int>, MemoryGenericRepository<Quiz, int>>();
 builder.Services.AddSingleton<IGenericRepository<QuizItem, int>, MemoryGenericRepository<QuizItem, int>>();
