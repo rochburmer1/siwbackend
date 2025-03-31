@@ -3,6 +3,8 @@ using ApplicationCore.Models.QuizAggregate;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using WebApi.Dto;
+using FluentValidation;
+using Microsoft.AspNetCore.JsonPatch;
 
 namespace WebApi.Controllers;
 
@@ -11,10 +13,13 @@ namespace WebApi.Controllers;
 public class ApiQuizUserController : ControllerBase
 {
     private readonly IQuizUserService _service;
+    private readonly IMapper _mapper;
+    private readonly IValidator<QuizItemDto> _validator;
 
-    public ApiQuizUserController(IQuizUserService service)
+    public ApiQuizUserController(IQuizUserService service, IMapper mapper)
     {
         _service = service;
+        _mapper = mapper;
     }
 
     [Route("{id}")]
@@ -47,25 +52,33 @@ public class ApiQuizUserController : ControllerBase
                 answer = dto.Answer,
             });
     }
-
+    
     [Route("{quizId}/answers/{userId}")]
     [HttpGet]
-    public ActionResult<object> GetQuizFeedback(int quizId, int userId)
+    public ActionResult<FeedbackDto> GetQuizFeedback(int quizId, int userId)
     {
-        var feedback = _service.GetUserAnswersForQuiz(quizId, userId);
-        return new
+        var quiz = _service.FindQuizById(quizId);
+        if (quiz == null)
         {
-            quizId = quizId,
-            userId = userId,
-            totalQuestions = _service.FindQuizById(quizId)?.Items.Count??0,
-            answers = feedback.Select(a =>
-                new
-                {
-                    question = a.QuizItem.Question,
-                    answer = a.Answer,
-                    isCorrect = a.IsCorrect()
-                }
-            ).AsEnumerable()
+            return NotFound();
+        }
+
+        var feedback = _service.GetUserAnswersForQuiz(quizId, userId);
+    
+        var dto = new FeedbackDto
+        {
+            QuizId = quizId,
+            UserId = userId,
+            TotalQuestions = quiz.Items.Count,
+            Answers = feedback.Select(a => new FeedbackAnswerDto
+            {
+                Question = a.QuizItem.Question,
+                Answer = a.Answer,
+                IsCorrect = a.IsCorrect()
+            }).ToList()
         };
+
+        return Ok(dto);
     }
+
 }

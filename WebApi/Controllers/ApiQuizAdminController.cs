@@ -6,6 +6,7 @@ using ApplicationCore.Models.QuizAggregate;
 using System.Linq;
 using System.ComponentModel.DataAnnotations;
 using AutoMapper;
+using FluentValidation;
 using WebApi.Dto;
 
 namespace WebAPI.Controllers
@@ -22,6 +23,7 @@ namespace WebAPI.Controllers
         public ApiQuizAdminController(IQuizAdminService service, LinkGenerator linkGenerator)
         {
             _service = service;
+            _mapper = _mapper;
             _linkGenerator = linkGenerator;
         }
 
@@ -55,7 +57,7 @@ namespace WebAPI.Controllers
         /// </summary>
         [HttpPatch("{quizId}")]
         [Consumes("application/json-patch+json")]
-        public ActionResult<Quiz> UpdateQuiz(int quizId, [FromBody] JsonPatchDocument<Quiz> patchDoc)
+        public ActionResult<Quiz> UpdateQuiz(int quizId, [FromBody] JsonPatchDocument<Quiz> patchDoc, [FromServices] IValidator<QuizItemDto> validator)
         {
             var quiz = _service.FindAllQuizzes().FirstOrDefault(q => q.Id == quizId);
             if (quiz is null || patchDoc is null)
@@ -75,9 +77,19 @@ namespace WebAPI.Controllers
             // Sprawdzenie, czy dodano nowe pytanie
             if (previousCount < quiz.Items.Count)
             {
-                QuizItem item = quiz.Items[^1]; // Pobranie ostatniego dodanego pytania
+                QuizItem newItem = quiz.Items[^1]; // Pobranie ostatniego dodanego pytania
+
+                // Mapowanie do DTO, by sprawdzić walidację
+                var newItemDto = _mapper.Map<QuizItemDto>(newItem);
+                var validationResult = validator.Validate(newItemDto);
+
+                if (!validationResult.IsValid)
+                {
+                    return BadRequest(validationResult.Errors);
+                }
+
                 quiz.Items.RemoveAt(quiz.Items.Count - 1); // Usunięcie go z listy quizu
-                _service.AddQuizItemToQuiz(quizId, item); // Dodanie go przez serwis
+                _service.AddQuizItemToQuiz(quizId, newItem); // Dodanie przez serwis
             }
 
             _service.UpdateQuiz(quiz); // Aktualizacja quizu w bazie

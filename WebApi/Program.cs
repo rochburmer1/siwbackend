@@ -3,10 +3,14 @@ using ApplicationCore.Interfaces.AdminService;
 using ApplicationCore.Interfaces.UserService;
 using ApplicationCore.Models;
 using ApplicationCore.Models.QuizAggregate;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Infrastructure.Memory.Generators;
 using Infrastructure.Memory.Repositories;
 using Web;
+using WebApi.Dto;
 using WebApi.Mapper;
+using WebApi.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +26,8 @@ builder.Services.AddSingleton<IGenericRepository<QuizItem, int>, MemoryGenericRe
 builder.Services.AddSingleton<IGenericRepository<QuizItemUserAnswer, string>, MemoryGenericRepository<QuizItemUserAnswer, string>>();
 builder.Services.AddSingleton<IQuizUserService, QuizUserService>();
 builder.Services.AddSingleton<IQuizAdminService, QuizAdminService>();
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddScoped<IValidator<QuizItemDto>, QuizItemValidator>();
 builder.Services.AddControllers().AddNewtonsoftJson();
 var app = builder.Build();
 
