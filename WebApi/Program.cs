@@ -29,6 +29,8 @@ builder.Services.AddSingleton<IQuizAdminService, QuizAdminService>();
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddScoped<IValidator<QuizItemDto>, QuizItemValidator>();
 builder.Services.AddControllers().AddNewtonsoftJson();
+builder.Services.AddScoped<IQuizAdminService, QuizAdminService>();
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

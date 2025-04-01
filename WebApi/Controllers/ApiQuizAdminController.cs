@@ -20,24 +20,27 @@ namespace WebAPI.Controllers
         private readonly IMapper _mapper;
         private readonly LinkGenerator _linkGenerator;
 
-        public ApiQuizAdminController(IQuizAdminService service, LinkGenerator linkGenerator)
+        public ApiQuizAdminController(IQuizAdminService service, IMapper mapper, LinkGenerator linkGenerator)
         {
-            _service = service;
-            _mapper = _mapper;
-            _linkGenerator = linkGenerator;
+            _service = service ?? throw new ArgumentNullException(nameof(service));
+            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+            _linkGenerator = linkGenerator ?? throw new ArgumentNullException(nameof(linkGenerator));
         }
 
         /// <summary>
         /// Tworzy nowy quiz bez pytań
         /// </summary>
         [HttpPost]
-        public ActionResult<QuizDto> AddQuiz(LinkGenerator link, NewQuizDto dto)
+        public ActionResult<QuizDto> AddQuiz(NewQuizDto dto)
         {
+            if (dto == null)
+                return BadRequest("Dane quizu są puste!");
+
             var quiz = _service.AddQuiz(_mapper.Map<Quiz>(dto));
 
             return Created(
-                link.GetPathByAction(HttpContext, nameof(GetQuiz), null, new { quizId = quiz.Id }),
-                _mapper.Map<QuizDto>(quiz) // Mapowanie do DTO
+                _linkGenerator.GetPathByAction(HttpContext, nameof(GetQuiz), null, new { quizId = quiz.Id }),
+                _mapper.Map<QuizDto>(quiz)
             );
         }
 
